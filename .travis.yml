@@ -1,0 +1,23 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t kamrade/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run kamrade/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t kamrade/multi-client ./client
+  - docker build -t kamrade/multi-nginx ./nginx
+  - docker build -t kamrade/multi-server ./server
+  - docker build -t kamrade/multi-worker ./worker
+
+  # Log in to the docker-cli
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push kamrade/multi-client
+  - docker push kamrade/multi-nginx
+  - docker push kamrade/multi-server
+  - docker push kamrade/multi-worker
